@@ -6,8 +6,14 @@ var app = builder.Build();
 
 Configure(app);
 
-new AuthAPI().Register(app);
-new HotelAPI().Register(app);
+var APIs = app.Services.GetServices<IAPI>();
+foreach(var api in APIs)
+{
+    if (api is null)
+        throw new InvalidProgramException("API not found");
+        
+    api.Register(app);
+}
 
 app.Run();
 
@@ -39,6 +45,9 @@ void RegisterServices(IServiceCollection services)
                 )
             };
         });
+
+    services.AddTransient<IAPI, AuthAPI>();
+    services.AddTransient<IAPI, HotelAPI>();
 }
 
 void Configure(WebApplication app)
