@@ -7,6 +7,26 @@ builder.Services.AddDbContext<HotelDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("Sqlite"));
 });
 builder.Services.AddScoped<IHotelRepository, HotelRepository>();
+builder.Services.AddSingleton<ITokenService>(new TokenServices());
+builder.Services.AddSingleton<IUserRepository>(new UserRepository());
+builder.Services.AddAuthorization();
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(x => 
+    {
+        x.TokenValidationParameters = new() 
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issue"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])
+            )
+        };
+    });
+
 
 var app = builder.Build();
 
