@@ -30,6 +30,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 var app = builder.Build();
 
+app.UseAuthentication();
+app.UseAuthorization();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -39,6 +42,29 @@ if (app.Environment.IsDevelopment())
     db.Database.EnsureCreated();    
 }
 
+app.MapGet("/login", 
+    [AllowAnonymous] 
+    async (
+        HttpContext context,
+        ITokenService tokenService, 
+        IUserRepository userRepository
+        ) =>
+    {
+        UserModel userModel = new()
+        {
+            UserName = context.Request.Query["username"],
+            Password = context.Request.Query["password"]
+        };
+        var userDto = userRepository.GetUser(userModel);
+        if (userDto == null)
+            return Results.Unauthorized();
+        var token = tokenService.BuildToken(builder.Configuration["Jwt:Key"], 
+            builder.Configuration["Jwt:Issuer"],
+            userDto);
+
+        return Results.Ok(token);
+    });
+    
 app.MapGet("/hotels", async (IHotelRepository repository) => 
     Results.Extensions.Xml(await repository.GetHotelsAsync())
     )
