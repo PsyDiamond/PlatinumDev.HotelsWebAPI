@@ -8,6 +8,9 @@ public class HotelRepository : IHotelRepository
     public Task<List<Hotel>> GetHotelsAsync() =>
         _context.Hotels.ToListAsync();
 
+    public Task<List<Hotel>> GetHotelsAsync(string name) =>
+        _context.Hotels.Where(x => x.Name.Contains(name)).ToListAsync();
+
     public async Task<Hotel> GetHotelAsync(int hotelId) => 
         await _context.Hotels.FindAsync(new object[]{hotelId});
 
@@ -48,7 +51,7 @@ public class HotelRepository : IHotelRepository
         }
         _disposed = true;
     }
-    
+
     public void Dispose()
     {
         Dispose(true);
