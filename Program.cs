@@ -86,6 +86,18 @@ app.MapGet("/hotels/search/name/{query}",
     .WithName("SearchHotels")
     .WithTags("Getters")
     .ExcludeFromDescription();
+
+app.MapGet("/hotels/search/location/{coordinate}",
+    async (Coordinate coordinate, IHotelRepository repository) => 
+        await repository.GetHotelsAsync(coordinate) is IEnumerable<Hotel> hotels
+            ? Results.Ok(hotels)
+            : Results.NotFound(Array.Empty<Hotel>())
+    )
+    .Produces<List<Hotel>>(StatusCodes.Status200OK)
+    .Produces(StatusCodes.Status404NotFound)
+    .WithName("SearchHotelsCoordinate")
+    .WithTags("Getters")
+    .ExcludeFromDescription();
 app.UseHttpsRedirection();
 
 app.Run();
