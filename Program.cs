@@ -1,4 +1,7 @@
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<HotelDbContext>(options => 
 {
     options.UseSqlite(builder.Configuration.GetConnectionString("Sqlite"));
@@ -9,6 +12,8 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
+    app.UseSwagger();
+    app.UseSwaggerUI();
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<HotelDbContext>();
     db.Database.EnsureCreated();    
@@ -47,7 +52,7 @@ app.MapPut("/hotels", async (
 app.MapDelete("/hotels/{id}", async (int id, IHotelRepository repository) => {
     await repository.DeleteHotelAsync(id);
     await repository.SaveAsync();
-    
+
     return Results.NoContent();
 });
 
