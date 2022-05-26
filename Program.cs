@@ -20,7 +20,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapGet("/hotels", async (IHotelRepository repository) => 
-    Results.Ok(await repository.GetHotelsAsync())
+    Results.Extensions.Xml(await repository.GetHotelsAsync())
     )
     .Produces<List<Hotel>>(StatusCodes.Status200OK)
     .WithName("GetAllHotels")
