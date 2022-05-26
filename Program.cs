@@ -11,7 +11,7 @@ foreach(var api in APIs)
 {
     if (api is null)
         throw new InvalidProgramException("API not found");
-        
+
     api.Register(app);
 }
 
