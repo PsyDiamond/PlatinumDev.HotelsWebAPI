@@ -59,5 +59,8 @@ app.MapDelete("/hotels/{id}", async (int id, HotelDbContext db) => {
     await db.SaveChangesAsync();
     return Results.NoContent();
 });
+
+app.UseHttpsRedirection();
+
 app.Run();
 
