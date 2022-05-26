@@ -1,26 +1,63 @@
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddDbContext<HotelDbContext>(options => 
+{
+    options.UseSqlite(builder.Configuration.GetConnectionString("Sqlite"));
+});
+
 var app = builder.Build();
 
-var hotels = new List<Hotel>();
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<HotelDbContext>();
+    db.Database.EnsureCreated();    
+}
 
-app.MapGet("/hotels", () => hotels);
-app.MapGet("/hotels/{id}", (int id) => hotels.FirstOrDefault(x => x.Id == id));
-app.MapPost("/hotels", (Hotel hotel) => hotels.Add(hotel));
-app.MapPut("/hotels", (Hotel hotel) => {
-    var index = hotels.FindIndex(x => x.Id == hotel.Id);
+app.MapGet("/hotels", async (HotelDbContext db) => await db.Hotels.ToListAsync());
 
-    if (index < 0)
-        throw new Exception("Not found");
+app.MapGet("/hotels/{id}", async (int id, HotelDbContext db) => 
+await db.Hotels.FirstOrDefaultAsync(x => x.Id == id) is Hotel hotel
+? Results.Ok(hotel)
+: Results.NotFound());
 
-    hotels[index] = hotel;
+app.MapPost("/hotels", 
+    async (
+        [FromBody]
+        Hotel hotel, 
+        HotelDbContext db) => 
+    {
+        await db.Hotels.AddAsync(hotel);
+        await db.SaveChangesAsync();
+        return Results.Created($"/hotels/{hotel.Id}", hotel);
+    }
+);
+
+app.MapPut("/hotels", async (
+    [FromBody]
+    Hotel hotel, 
+    HotelDbContext db) => 
+    {
+        var hotelFromDb = await db.Hotels.FindAsync(new object[]{hotel.Id});
+
+        if (hotelFromDb == null)
+            return Results.NotFound();
+
+        hotelFromDb.Latitude = hotel.Latitude;
+        hotelFromDb.Longitude = hotel.Longitude;
+        hotelFromDb.Name = hotel.Name;
+        await db.SaveChangesAsync();
+        return Results.NoContent();
 });
-app.MapDelete("/hotels/{id}", (int id) => {
-    var index = hotels.FindIndex(x => x.Id == id);
 
-    if (index < 0)
-        throw new Exception("Not found");
+app.MapDelete("/hotels/{id}", async (int id, HotelDbContext db) => {
+    var hotelFromDb = await db.Hotels.FindAsync(new object[]{id});
 
-    hotels.RemoveAt(index);
+    if (hotelFromDb == null)
+        return Results.NotFound();
+
+    db.Hotels.Remove(hotelFromDb);
+    await db.SaveChangesAsync();
+    return Results.NoContent();
 });
 app.Run();
 
